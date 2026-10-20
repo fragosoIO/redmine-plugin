@@ -1,0 +1,31 @@
+{
+  "bad_json": "Redmine returned invalid JSON",
+  "bad_key": "API key must be a single line",
+  "bad_url": "Redmine URL must start with http:// or https://",
+  "empty": "No open issues assigned to you",
+  "http_error": "Redmine returned HTTP {status}",
+  "issues": {
+    "one": "{count} open issue",
+    "other": "{count} open issues"
+  },
+  "loading": "Loading Redmine…",
+  "offline": "Could not reach Redmine",
+  "open_failed": "Could not open the issue in a browser",
+  "no_matches": "No matching tickets",
+  "open_settings": "Plugin settings",
+  "search_placeholder": "Title or ticket number, then Enter",
+  "searching": "Searching…",
+  "settings": {
+    "api_key": {
+      "description": "From My account, API access key. Leave empty only if this Redmine allows anonymous access.",
+      "label": "API key"
+    },
+    "url": {
+      "description": "Base URL of your Redmine, such as https://redmine.example.com",
+      "label": "Redmine URL"
+    }
+  },
+  "showing": "Showing {shown} of {total}",
+  "title": "Redmine",
+  "unconfigured": "Set your Redmine URL in plugin settings"
+}

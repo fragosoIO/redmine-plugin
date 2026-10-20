@@ -1,0 +1,40 @@
+id = "fragoso/redmine"
+name = "Redmine"
+version = "1.0.0"
+plugin_api = 26
+author = "fragoso"
+license = "MIT"
+icon = "ticket"
+description = "Open Redmine issues assigned to you, and search by title or number."
+tags = ["redmine"]
+
+# Shared by the poller, the bar widget, and the panel.
+[[setting]]
+key = "url"
+type = "string"
+label_key = "settings.url.label"
+description_key = "settings.url.description"
+default = ""
+
+[[setting]]
+key = "api_key"
+type = "string"
+label_key = "settings.api_key.label"
+description_key = "settings.api_key.description"
+default = ""
+
+[[service]]
+id = "sync"
+entry = "service.luau"
+
+[[widget]]
+id = "assigned"
+entry = "widget.luau"
+
+[[panel]]
+id = "issues"
+entry = "panel.luau"
+width = 420
+height = 480
+placement = "floating"
+position = "center"
