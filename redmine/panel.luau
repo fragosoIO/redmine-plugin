@@ -8,6 +8,11 @@ local searchResult = nil
 local generation = 0
 local render
 
+local ID_W = 96
+local PROJECT_W = 180
+local STATUS_W = 140
+local OPEN_W = 40
+
 local function openIssue(href)
   noctalia.runAsync({ "xdg-open", href }, function(result)
     if result.exitCode ~= 0 then
@@ -16,24 +21,123 @@ local function openIssue(href)
   end)
 end
 
-local function issueButton(issue)
-  local href = issue.href
-  local meta = issue.project
-  if issue.status ~= "" then
-    meta = meta == "" and issue.status or `{meta} · {issue.status}`
+local function copyTicket(id)
+  local text = `#{id}`
+  if not noctalia.copyToClipboard(text, "text/plain") then
+    noctalia.notifyError(noctalia.tr("title"), noctalia.tr("copy_failed"))
+    return
   end
-  local props = {
-    text = `#{issue.id} {issue.subject}`,
+  noctalia.notify(noctalia.tr("title"), noctalia.tr("copied", { id = text }))
+end
+
+local function issueColumns(issues)
+  local project, status = false, false
+  for _, issue in ipairs(issues) do
+    project = project or issue.project ~= ""
+    status = status or issue.status ~= ""
+  end
+  return project, status
+end
+
+local function head(text, width, grow)
+  return ui.label({
+    text = text,
+    width = width,
+    flexGrow = grow and 1 or nil,
+    fontSize = 14,
+    fontWeight = "medium",
+    color = "on_surface_variant",
+    maxLines = 1,
+  })
+end
+
+local function issueHeader(showProject, showStatus)
+  local cells = {
+    head(noctalia.tr("col_id"), ID_W, false),
+    head(noctalia.tr("col_subject"), nil, true),
+  }
+  if showProject then
+    table.insert(cells, head(noctalia.tr("col_project"), PROJECT_W, false))
+  end
+  if showStatus then
+    table.insert(cells, head(noctalia.tr("col_status"), STATUS_W, false))
+  end
+  table.insert(cells, ui.label({ text = "", width = OPEN_W }))
+  return ui.row({ align = "center", gap = 8, paddingH = 8 }, cells)
+end
+
+local function issueRow(issue, showProject, showStatus)
+  local href = issue.href
+  local cells = {
+    ui.label({
+      text = `#{issue.id}`,
+      width = ID_W,
+      fontSize = 15,
+      maxLines = 1,
+      color = "primary",
+      fontWeight = "medium",
+    }),
+    ui.label({
+      text = issue.subject,
+      flexGrow = 1,
+      fontSize = 15,
+      maxLines = 1,
+    }),
+  }
+  if showProject then
+    table.insert(cells, ui.label({
+      text = issue.project,
+      width = PROJECT_W,
+      fontSize = 15,
+      maxLines = 1,
+      color = "on_surface_variant",
+    }))
+  end
+  if showStatus then
+    table.insert(cells, ui.label({
+      text = issue.status,
+      width = STATUS_W,
+      fontSize = 15,
+      maxLines = 1,
+      color = "on_surface_variant",
+    }))
+  end
+  table.insert(cells, ui.button({
+    glyph = "external-link",
     variant = "ghost",
-    contentAlign = "start",
+    controlSize = "md",
+    width = OPEN_W,
+    tooltip = noctalia.tr("open_issue"),
     onClick = function()
       openIssue(href)
     end,
-  }
-  if meta ~= "" then
-    props.tooltip = meta
+  }))
+  -- Row click copies; the button is its own target and opens the ticket.
+  return ui.row({
+    key = `issue-{issue.id}`,
+    align = "center",
+    gap = 8,
+    paddingH = 10,
+    paddingV = 6,
+    radius = 6,
+    fill = "on_surface/0.06",
+    onClick = function()
+      copyTicket(issue.id)
+    end,
+  }, cells)
+end
+
+local function appendIssues(body, issues)
+  local showProject, showStatus = issueColumns(issues)
+  table.insert(body, ui.label({
+    text = noctalia.tr("click_to_copy"),
+    fontSize = 14,
+    color = "on_surface_variant",
+  }))
+  table.insert(body, issueHeader(showProject, showStatus))
+  for _, issue in ipairs(issues) do
+    table.insert(body, issueRow(issue, showProject, showStatus))
   end
-  return ui.button(props)
 end
 
 local function subjectFromTitle(title)
@@ -226,9 +330,7 @@ function render()
     elseif searchResult.issues == nil or #searchResult.issues == 0 then
       table.insert(body, ui.label({ text = noctalia.tr("no_matches"), color = "on_surface_variant" }))
     else
-      for _, issue in ipairs(searchResult.issues) do
-        table.insert(body, issueButton(issue))
-      end
+      appendIssues(body, searchResult.issues)
     end
   elseif snap == nil then
     table.insert(body, ui.label({ text = noctalia.tr("loading"), color = "on_surface_variant" }))
@@ -251,9 +353,7 @@ function render()
         color = "on_surface_variant",
       }))
     end
-    for _, issue in ipairs(snap.issues) do
-      table.insert(body, issueButton(issue))
-    end
+    appendIssues(body, snap.issues)
   end
 
   panel.render(ui.column({ flexGrow = 1, gap = 12 }, {
